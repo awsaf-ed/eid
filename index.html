@@ -4,281 +4,129 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Photo Roulette</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
       background: #f9f8f6;
-      font-family: 'DM Sans', sans-serif;
+      font-family: Arial, sans-serif;
     }
-    #roulette-app {
+
+    .container {
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 2rem 1rem;
+      gap: 20px;
     }
-    #start-screen { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
-    .big-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 2.2rem;
-      color: #1a1a1a;
-      letter-spacing: -0.5px;
-      text-align: center;
-    }
-    .sub {
-      font-size: 14px;
-      color: #666;
-      text-align: center;
-      max-width: 280px;
-      line-height: 1.6;
-    }
-    .start-btn {
-      margin-top: 0.5rem;
-      padding: 14px 40px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 15px;
-      font-weight: 500;
-      letter-spacing: 0.5px;
-      background: #1a1a1a;
-      color: #fff;
-      border: none;
-      border-radius: 50px;
-      cursor: pointer;
-      transition: opacity 0.2s, transform 0.15s;
-    }
-    .start-btn:hover { opacity: 0.85; transform: scale(1.03); }
-    .start-btn:active { transform: scale(0.97); }
-
-    #game-screen { display: none; flex-direction: column; align-items: center; gap: 1.5rem; width: 100%; }
 
     .scene {
       width: 360px;
-      height: 220px;
-      perspective: 900px;
+      aspect-ratio: 16/9;
+      perspective: 1000px;
       cursor: pointer;
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-tap-highlight-color: transparent;
     }
-    .card-inner {
+
+    .card {
       width: 100%;
       height: 100%;
       position: relative;
       transform-style: preserve-3d;
-      transition: transform 0.65s cubic-bezier(0.4, 0.2, 0.2, 1);
-      border-radius: 16px;
-      pointer-events: none;
+      transition: transform 0.6s;
     }
-    .card-inner.flipped { transform: rotateY(180deg); }
-    .card-face {
+
+    .card.flipped {
+      transform: rotateY(180deg);
+    }
+
+    .face {
       position: absolute;
-      inset: 0;
+      width: 100%;
+      height: 100%;
       backface-visibility: hidden;
-      -webkit-backface-visibility: hidden;
-      border-radius: 16px;
+      border-radius: 12px;
       overflow: hidden;
-      border: 0.5px solid #ddd;
     }
-    .card-face img {
+
+    .face img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      display: block;
-      pointer-events: none;
     }
-    .card-front .tap-hint {
-      position: absolute;
-      bottom: 10px;
-      right: 12px;
-      background: rgba(0,0,0,0.45);
-      color: #fff;
-      font-size: 11px;
-      padding: 4px 10px;
+
+    .back {
+      transform: rotateY(180deg);
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
       border-radius: 20px;
-      letter-spacing: 0.3px;
-      pointer-events: none;
-    }
-    .card-back { transform: rotateY(180deg); }
-    .card-back .back-overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(0,0,0,0.35);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      pointer-events: none;
-    }
-    .card-back .back-label {
-      color: #fff;
-      font-size: 13px;
-      font-weight: 500;
-      background: rgba(255,255,255,0.15);
-      border: 1px solid rgba(255,255,255,0.4);
-      padding: 6px 16px;
-      border-radius: 20px;
-      letter-spacing: 0.3px;
-    }
-    .controls { display: flex; gap: 10px; }
-    .ctrl-btn {
-      padding: 10px 24px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 13px;
-      font-weight: 500;
-      background: transparent;
-      color: #1a1a1a;
-      border: 0.5px solid #aaa;
-      border-radius: 50px;
+      background: black;
+      color: white;
       cursor: pointer;
-      transition: background 0.15s, transform 0.1s;
-    }
-    .ctrl-btn:hover { background: #f0f0f0; }
-    .ctrl-btn:active { transform: scale(0.97); }
-    .ctrl-btn.primary {
-      background: #1a1a1a;
-      color: #fff;
-      border-color: transparent;
-    }
-    .ctrl-btn.primary:hover { opacity: 0.85; }
-    .reveal-anim {
-      animation: card-reveal 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
-    }
-    @keyframes card-reveal {
-      from { transform: scale(0.88) rotateY(-25deg); opacity: 0; }
-      to   { transform: scale(1) rotateY(0deg); opacity: 1; }
     }
   </style>
 </head>
+
 <body>
-  <div id="roulette-app">
-    <div id="start-screen">
-      <div class="big-title">Photo Roulette</div>
-      <div class="sub">Press start — a random photo will be picked for you. Tap the card to flip it.</div>
-      <button class="start-btn" id="startBtn">Start</button>
-    </div>
+  <div class="container">
+    <button onclick="spin()">Spin</button>
 
-    <div id="game-screen">
-      <div class="scene" id="scene">
-        <div class="card-inner" id="cardInner">
-          <div class="card-face card-front">
-            <img id="frontImg" src="" alt="Front" draggable="false" />
-            <div class="tap-hint">tap to flip</div>
-          </div>
-          <div class="card-face card-back">
-            <img id="backImg" src="" alt="Back" draggable="false" />
-            <div class="back-overlay">
-              <div class="back-label">other side</div>
-            </div>
-          </div>
+    <div class="scene" id="scene">
+      <div class="card" id="card">
+        <div class="face front">
+          <img id="frontImg" src="">
         </div>
-      </div>
-
-      <div class="controls">
-        <button class="ctrl-btn" id="backBtn">Back</button>
-        <button class="ctrl-btn primary" id="spinBtn">Spin again</button>
+        <div class="face back">
+          <img id="backImg" src="">
+        </div>
       </div>
     </div>
   </div>
 
   <script>
-    // 🔁 REPLACE these URLs with your own image links
     const cards = [
       {
         front: "https://github.com/awsaf-ed/eid/blob/main/1.jpg?raw=true",
-        back:  "https://github.com/awsaf-ed/eid/blob/main/2.jpg?raw=true"
+        back: "https://github.com/awsaf-ed/eid/blob/main/2.jpg?raw=true"
       },
       {
         front: "https://github.com/awsaf-ed/eid/blob/main/1.jpg?raw=true",
-        back:  "https://github.com/awsaf-ed/eid/blob/main/3.jpg?raw=true"
+        back: "https://github.com/awsaf-ed/eid/blob/main/3.jpg?raw=true"
       },
       {
         front: "https://github.com/awsaf-ed/eid/blob/main/1.jpg?raw=true",
-        back:  "https://github.com/awsaf-ed/eid/blob/main/4.jpg?raw=true"
+        back: "https://github.com/awsaf-ed/eid/blob/main/4.jpg?raw=true"
       },
       {
         front: "https://github.com/awsaf-ed/eid/blob/main/1.jpg?raw=true",
-        back:  "https://github.com/awsaf-ed/eid/blob/main/5.jpg?raw=true"
+        back: "https://github.com/awsaf-ed/eid/blob/main/5.jpg?raw=true"
       }
     ];
 
-    let usedIndices = [];
-    let isFlipped = false;
-    let isSpinning = false;
+    const frontImg = document.getElementById("frontImg");
+    const backImg = document.getElementById("backImg");
+    const card = document.getElementById("card");
 
-    const scene     = document.getElementById('scene');
-    const cardInner = document.getElementById('cardInner');
-    const frontImg  = document.getElementById('frontImg');
-    const backImg   = document.getElementById('backImg');
+    let flipped = false;
 
-    function getRandomUnused() {
-      if (usedIndices.length === cards.length) usedIndices = [];
-      const remaining = cards.map((_, i) => i).filter(i => !usedIndices.includes(i));
-      const pick = remaining[Math.floor(Math.random() * remaining.length)];
-      usedIndices.push(pick);
-      return pick;
+    function spin() {
+      const random = cards[Math.floor(Math.random() * cards.length)];
+
+      frontImg.src = random.front;
+      backImg.src = random.back;
+
+      card.classList.remove("flipped");
+      flipped = false;
     }
 
-    function startGame() {
-      document.getElementById('start-screen').style.display = 'none';
-      document.getElementById('game-screen').style.display = 'flex';
-      usedIndices = [];
-      runRouletteAndReveal();
-    }
-
-    function runRouletteAndReveal() {
-      isSpinning = true;
-      isFlipped = false;
-      cardInner.classList.remove('flipped', 'reveal-anim');
-
-      let flashCount = 0;
-      const maxFlashes = 9;
-
-      const flashInterval = setInterval(() => {
-        const tempIdx = flashCount % cards.length;
-        frontImg.src = cards[tempIdx].front;
-        backImg.src  = cards[tempIdx].back;
-        cardInner.style.opacity = flashCount % 2 === 0 ? '1' : '0.5';
-        flashCount++;
-        if (flashCount >= maxFlashes) {
-          clearInterval(flashInterval);
-          cardInner.style.opacity = '1';
-          const picked = getRandomUnused();
-          frontImg.src = cards[picked].front;
-          backImg.src  = cards[picked].back;
-          cardInner.classList.remove('reveal-anim');
-          void cardInner.offsetWidth;
-          cardInner.classList.add('reveal-anim');
-          isSpinning = false;
-        }
-      }, 100);
-    }
-
-    // Flip on click
-    scene.addEventListener('click', function(e) {
-      e.stopPropagation();
-      if (isSpinning) return;
-      isFlipped = !isFlipped;
-      cardInner.classList.toggle('flipped', isFlipped);
-    });
-
-    document.getElementById('startBtn').addEventListener('click', startGame);
-
-    document.getElementById('spinBtn').addEventListener('click', function(e) {
-      e.stopPropagation();
-      if (isSpinning) return;
-      runRouletteAndReveal();
-    });
-
-    document.getElementById('backBtn').addEventListener('click', function(e) {
-      e.stopPropagation();
-      document.getElementById('game-screen').style.display = 'none';
-      document.getElementById('start-screen').style.display = 'flex';
-      usedIndices = [];
-      isFlipped = false;
+    // ✅ FIXED: Only ONE event (no double trigger)
+    document.getElementById("scene").addEventListener("click", () => {
+      flipped = !flipped;
+      card.classList.toggle("flipped", flipped);
     });
   </script>
 </body>
