@@ -265,15 +265,6 @@
       cardInner.classList.toggle('flipped', isFlipped);
     });
 
-    // Flip on tap (mobile)
-    scene.addEventListener('touchend', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      if (isSpinning) return;
-      isFlipped = !isFlipped;
-      cardInner.classList.toggle('flipped', isFlipped);
-    }, { passive: false });
-
     document.getElementById('startBtn').addEventListener('click', startGame);
 
     document.getElementById('spinBtn').addEventListener('click', function(e) {
