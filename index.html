@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Photo Roulette</title>
-
   <style>
     body {
       min-height: 100vh;
@@ -14,21 +13,18 @@
       background: #f9f8f6;
       font-family: Arial, sans-serif;
     }
-
     .container {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 20px;
     }
-
     .scene {
       width: 360px;
       aspect-ratio: 16/9;
       perspective: 1000px;
       cursor: pointer;
     }
-
     .card {
       width: 100%;
       height: 100%;
@@ -36,11 +32,9 @@
       transform-style: preserve-3d;
       transition: transform 0.6s;
     }
-
     .card.flipped {
       transform: rotateY(180deg);
     }
-
     .face {
       position: absolute;
       width: 100%;
@@ -49,17 +43,14 @@
       border-radius: 12px;
       overflow: hidden;
     }
-
     .face img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
-
     .back {
       transform: rotateY(180deg);
     }
-
     button {
       padding: 10px 20px;
       border: none;
@@ -67,14 +58,17 @@
       background: black;
       color: white;
       cursor: pointer;
+      font-size: 16px;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
   </style>
 </head>
-
 <body>
   <div class="container">
-    <button onclick="spin()">Spin</button>
-
+    <button id="spinBtn" onclick="spin()">Spin</button>
     <div class="scene" id="scene">
       <div class="card" id="card">
         <div class="face front">
@@ -86,7 +80,6 @@
       </div>
     </div>
   </div>
-
   <script>
     const cards = [
       {
@@ -110,24 +103,48 @@
     const frontImg = document.getElementById("frontImg");
     const backImg = document.getElementById("backImg");
     const card = document.getElementById("card");
-
+    const spinBtn = document.getElementById("spinBtn");
     let flipped = false;
+    let isAnimating = false;
 
-    function spin() {
-      const random = cards[Math.floor(Math.random() * cards.length)];
-
-      frontImg.src = random.front;
-      backImg.src = random.back;
-
-      card.classList.remove("flipped");
-      flipped = false;
+    // FIX 1: Load an initial card on page load
+    function loadCard(cardData) {
+      frontImg.src = cardData.front;
+      backImg.src = cardData.back;
     }
 
-    // ✅ FIXED: Only ONE event (no double trigger)
+    function spin() {
+      if (isAnimating) return;
+
+      const random = cards[Math.floor(Math.random() * cards.length)];
+
+      // FIX 2: If already flipped, flip back first, then swap images after transition
+      if (flipped) {
+        isAnimating = true;
+        spinBtn.disabled = true;
+        card.classList.remove("flipped");
+        flipped = false;
+
+        card.addEventListener("transitionend", () => {
+          loadCard(random);
+          isAnimating = false;
+          spinBtn.disabled = false;
+        }, { once: true });
+      } else {
+        // FIX 3: Swap images immediately if card is already showing front
+        loadCard(random);
+      }
+    }
+
+    // FIX 4: Guard click flips against animation
     document.getElementById("scene").addEventListener("click", () => {
+      if (isAnimating) return;
       flipped = !flipped;
       card.classList.toggle("flipped", flipped);
     });
+
+    // FIX 1: Initialize with a random card on load
+    loadCard(cards[Math.floor(Math.random() * cards.length)]);
   </script>
 </body>
 </html>
