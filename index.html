@@ -53,52 +53,87 @@
     }
     .start-btn:hover { opacity: 0.85; transform: scale(1.03); }
     .start-btn:active { transform: scale(0.97); }
+
     #game-screen { display: none; flex-direction: column; align-items: center; gap: 1.5rem; width: 100%; }
-    .scene { width: 360px; height: 220px; perspective: 900px; cursor: pointer; }
+
+    .scene {
+      width: 360px;
+      height: 220px;
+      perspective: 900px;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
     .card-inner {
-      width: 100%; height: 100%;
+      width: 100%;
+      height: 100%;
       position: relative;
       transform-style: preserve-3d;
       transition: transform 0.65s cubic-bezier(0.4, 0.2, 0.2, 1);
       border-radius: 16px;
+      pointer-events: none;
     }
     .card-inner.flipped { transform: rotateY(180deg); }
     .card-face {
-      position: absolute; inset: 0;
+      position: absolute;
+      inset: 0;
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
       border-radius: 16px;
       overflow: hidden;
-      border: 0.5px solid #e0e0e0;
+      border: 0.5px solid #ddd;
     }
-    .card-face img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .card-face img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      pointer-events: none;
+    }
     .card-front .tap-hint {
-      position: absolute; bottom: 10px; right: 12px;
-      background: rgba(0,0,0,0.45); color: #fff;
-      font-size: 11px; padding: 4px 10px;
-      border-radius: 20px; letter-spacing: 0.3px;
+      position: absolute;
+      bottom: 10px;
+      right: 12px;
+      background: rgba(0,0,0,0.45);
+      color: #fff;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      letter-spacing: 0.3px;
+      pointer-events: none;
     }
     .card-back { transform: rotateY(180deg); }
     .card-back .back-overlay {
-      position: absolute; inset: 0;
+      position: absolute;
+      inset: 0;
       background: rgba(0,0,0,0.35);
-      display: flex; align-items: center; justify-content: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
     }
     .card-back .back-label {
-      color: #fff; font-size: 13px; font-weight: 500;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 500;
       background: rgba(255,255,255,0.15);
       border: 1px solid rgba(255,255,255,0.4);
-      padding: 6px 16px; border-radius: 20px; letter-spacing: 0.3px;
+      padding: 6px 16px;
+      border-radius: 20px;
+      letter-spacing: 0.3px;
     }
     .controls { display: flex; gap: 10px; }
     .ctrl-btn {
       padding: 10px 24px;
       font-family: 'DM Sans', sans-serif;
-      font-size: 13px; font-weight: 500;
+      font-size: 13px;
+      font-weight: 500;
       background: transparent;
       color: #1a1a1a;
       border: 0.5px solid #aaa;
-      border-radius: 50px; cursor: pointer;
+      border-radius: 50px;
+      cursor: pointer;
       transition: background 0.15s, transform 0.1s;
     }
     .ctrl-btn:hover { background: #f0f0f0; }
@@ -123,18 +158,18 @@
     <div id="start-screen">
       <div class="big-title">Photo Roulette</div>
       <div class="sub">Press start — a random photo will be picked for you. Tap the card to flip it.</div>
-      <button class="start-btn" onclick="startGame()">Start</button>
+      <button class="start-btn" id="startBtn">Start</button>
     </div>
 
     <div id="game-screen">
-      <div class="scene" id="scene" onclick="flipCard()">
+      <div class="scene" id="scene">
         <div class="card-inner" id="cardInner">
           <div class="card-face card-front">
-            <img id="frontImg" src="" alt="Front" />
+            <img id="frontImg" src="" alt="Front" draggable="false" />
             <div class="tap-hint">tap to flip</div>
           </div>
           <div class="card-face card-back">
-            <img id="backImg" src="" alt="Back" />
+            <img id="backImg" src="" alt="Back" draggable="false" />
             <div class="back-overlay">
               <div class="back-label">other side</div>
             </div>
@@ -143,8 +178,8 @@
       </div>
 
       <div class="controls">
-        <button class="ctrl-btn" onclick="goBack()">Back</button>
-        <button class="ctrl-btn primary" onclick="spinNext()">Spin again</button>
+        <button class="ctrl-btn" id="backBtn">Back</button>
+        <button class="ctrl-btn primary" id="spinBtn">Spin again</button>
       </div>
     </div>
   </div>
@@ -174,6 +209,11 @@
     let isFlipped = false;
     let isSpinning = false;
 
+    const scene     = document.getElementById('scene');
+    const cardInner = document.getElementById('cardInner');
+    const frontImg  = document.getElementById('frontImg');
+    const backImg   = document.getElementById('backImg');
+
     function getRandomUnused() {
       if (usedIndices.length === cards.length) usedIndices = [];
       const remaining = cards.map((_, i) => i).filter(i => !usedIndices.includes(i));
@@ -192,49 +232,63 @@
     function runRouletteAndReveal() {
       isSpinning = true;
       isFlipped = false;
-      const ci = document.getElementById('cardInner');
-      ci.classList.remove('flipped', 'reveal-anim');
+      cardInner.classList.remove('flipped', 'reveal-anim');
 
-      const interval = 100;
-      const maxFlashes = 9;
       let flashCount = 0;
+      const maxFlashes = 9;
 
       const flashInterval = setInterval(() => {
         const tempIdx = flashCount % cards.length;
-        document.getElementById('frontImg').src = cards[tempIdx].front;
-        document.getElementById('backImg').src = cards[tempIdx].back;
-        ci.style.opacity = flashCount % 2 === 0 ? '1' : '0.5';
+        frontImg.src = cards[tempIdx].front;
+        backImg.src  = cards[tempIdx].back;
+        cardInner.style.opacity = flashCount % 2 === 0 ? '1' : '0.5';
         flashCount++;
         if (flashCount >= maxFlashes) {
           clearInterval(flashInterval);
-          ci.style.opacity = '1';
+          cardInner.style.opacity = '1';
           const picked = getRandomUnused();
-          document.getElementById('frontImg').src = cards[picked].front;
-          document.getElementById('backImg').src = cards[picked].back;
-          ci.classList.remove('reveal-anim');
-          void ci.offsetWidth;
-          ci.classList.add('reveal-anim');
+          frontImg.src = cards[picked].front;
+          backImg.src  = cards[picked].back;
+          cardInner.classList.remove('reveal-anim');
+          void cardInner.offsetWidth;
+          cardInner.classList.add('reveal-anim');
           isSpinning = false;
         }
-      }, interval);
+      }, 100);
     }
 
-    function flipCard() {
+    // Flip on click
+    scene.addEventListener('click', function(e) {
+      e.stopPropagation();
       if (isSpinning) return;
       isFlipped = !isFlipped;
-      document.getElementById('cardInner').classList.toggle('flipped', isFlipped);
-    }
+      cardInner.classList.toggle('flipped', isFlipped);
+    });
 
-    function spinNext() {
+    // Flip on tap (mobile)
+    scene.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (isSpinning) return;
+      isFlipped = !isFlipped;
+      cardInner.classList.toggle('flipped', isFlipped);
+    }, { passive: false });
+
+    document.getElementById('startBtn').addEventListener('click', startGame);
+
+    document.getElementById('spinBtn').addEventListener('click', function(e) {
+      e.stopPropagation();
       if (isSpinning) return;
       runRouletteAndReveal();
-    }
+    });
 
-    function goBack() {
+    document.getElementById('backBtn').addEventListener('click', function(e) {
+      e.stopPropagation();
       document.getElementById('game-screen').style.display = 'none';
       document.getElementById('start-screen').style.display = 'flex';
       usedIndices = [];
-    }
+      isFlipped = false;
+    });
   </script>
 </body>
 </html>
