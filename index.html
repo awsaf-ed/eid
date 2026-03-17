@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Photo Roulette</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f9f8f6;
+      font-family: 'DM Sans', sans-serif;
+    }
+    #roulette-app {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+    #start-screen { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+    .big-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.2rem;
+      color: #1a1a1a;
+      letter-spacing: -0.5px;
+      text-align: center;
+    }
+    .sub {
+      font-size: 14px;
+      color: #666;
+      text-align: center;
+      max-width: 280px;
+      line-height: 1.6;
+    }
+    .start-btn {
+      margin-top: 0.5rem;
+      padding: 14px 40px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      background: #1a1a1a;
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+    .start-btn:hover { opacity: 0.85; transform: scale(1.03); }
+    .start-btn:active { transform: scale(0.97); }
+    #game-screen { display: none; flex-direction: column; align-items: center; gap: 1.5rem; width: 100%; }
+    .scene { width: 360px; height: 220px; perspective: 900px; cursor: pointer; }
+    .card-inner {
+      width: 100%; height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.65s cubic-bezier(0.4, 0.2, 0.2, 1);
+      border-radius: 16px;
+    }
+    .card-inner.flipped { transform: rotateY(180deg); }
+    .card-face {
+      position: absolute; inset: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 0.5px solid #e0e0e0;
+    }
+    .card-face img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .card-front .tap-hint {
+      position: absolute; bottom: 10px; right: 12px;
+      background: rgba(0,0,0,0.45); color: #fff;
+      font-size: 11px; padding: 4px 10px;
+      border-radius: 20px; letter-spacing: 0.3px;
+    }
+    .card-back { transform: rotateY(180deg); }
+    .card-back .back-overlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.35);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .card-back .back-label {
+      color: #fff; font-size: 13px; font-weight: 500;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.4);
+      padding: 6px 16px; border-radius: 20px; letter-spacing: 0.3px;
+    }
+    .controls { display: flex; gap: 10px; }
+    .ctrl-btn {
+      padding: 10px 24px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 500;
+      background: transparent;
+      color: #1a1a1a;
+      border: 0.5px solid #aaa;
+      border-radius: 50px; cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .ctrl-btn:hover { background: #f0f0f0; }
+    .ctrl-btn:active { transform: scale(0.97); }
+    .ctrl-btn.primary {
+      background: #1a1a1a;
+      color: #fff;
+      border-color: transparent;
+    }
+    .ctrl-btn.primary:hover { opacity: 0.85; }
+    .reveal-anim {
+      animation: card-reveal 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    @keyframes card-reveal {
+      from { transform: scale(0.88) rotateY(-25deg); opacity: 0; }
+      to   { transform: scale(1) rotateY(0deg); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div id="roulette-app">
+    <div id="start-screen">
+      <div class="big-title">Photo Roulette</div>
+      <div class="sub">Press start — a random photo will be picked for you. Tap the card to flip it.</div>
+      <button class="start-btn" onclick="startGame()">Start</button>
+    </div>
+
+    <div id="game-screen">
+      <div class="scene" id="scene" onclick="flipCard()">
+        <div class="card-inner" id="cardInner">
+          <div class="card-face card-front">
+            <img id="frontImg" src="" alt="Front" />
+            <div class="tap-hint">tap to flip</div>
+          </div>
+          <div class="card-face card-back">
+            <img id="backImg" src="" alt="Back" />
+            <div class="back-overlay">
+              <div class="back-label">other side</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="ctrl-btn" onclick="goBack()">Back</button>
+        <button class="ctrl-btn primary" onclick="spinNext()">Spin again</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 🔁 REPLACE these URLs with your own image links
+    const cards = [
+      {
+        front: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=720&q=80",
+        back:  "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=720&q=80"
+      },
+      {
+        front: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=720&q=80",
+        back:  "https://images.unsplash.com/photo-1473116763249-2faaef81ccda?w=720&q=80"
+      },
+      {
+        front: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=720&q=80",
+        back:  "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=720&q=80"
+      },
+      {
+        front: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=720&q=80",
+        back:  "https://images.unsplash.com/photo-1444927714506-8492d94b4e3d?w=720&q=80"
+      }
+    ];
+
+    let usedIndices = [];
+    let isFlipped = false;
+    let isSpinning = false;
+
+    function getRandomUnused() {
+      if (usedIndices.length === cards.length) usedIndices = [];
+      const remaining = cards.map((_, i) => i).filter(i => !usedIndices.includes(i));
+      const pick = remaining[Math.floor(Math.random() * remaining.length)];
+      usedIndices.push(pick);
+      return pick;
+    }
+
+    function startGame() {
+      document.getElementById('start-screen').style.display = 'none';
+      document.getElementById('game-screen').style.display = 'flex';
+      usedIndices = [];
+      runRouletteAndReveal();
+    }
+
+    function runRouletteAndReveal() {
+      isSpinning = true;
+      isFlipped = false;
+      const ci = document.getElementById('cardInner');
+      ci.classList.remove('flipped', 'reveal-anim');
+
+      const interval = 100;
+      const maxFlashes = 9;
+      let flashCount = 0;
+
+      const flashInterval = setInterval(() => {
+        const tempIdx = flashCount % cards.length;
+        document.getElementById('frontImg').src = cards[tempIdx].front;
+        document.getElementById('backImg').src = cards[tempIdx].back;
+        ci.style.opacity = flashCount % 2 === 0 ? '1' : '0.5';
+        flashCount++;
+        if (flashCount >= maxFlashes) {
+          clearInterval(flashInterval);
+          ci.style.opacity = '1';
+          const picked = getRandomUnused();
+          document.getElementById('frontImg').src = cards[picked].front;
+          document.getElementById('backImg').src = cards[picked].back;
+          ci.classList.remove('reveal-anim');
+          void ci.offsetWidth;
+          ci.classList.add('reveal-anim');
+          isSpinning = false;
+        }
+      }, interval);
+    }
+
+    function flipCard() {
+      if (isSpinning) return;
+      isFlipped = !isFlipped;
+      document.getElementById('cardInner').classList.toggle('flipped', isFlipped);
+    }
+
+    function spinNext() {
+      if (isSpinning) return;
+      runRouletteAndReveal();
+    }
+
+    function goBack() {
+      document.getElementById('game-screen').style.display = 'none';
+      document.getElementById('start-screen').style.display = 'flex';
+      usedIndices = [];
+    }
+  </script>
+</body>
+</html>
